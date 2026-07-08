@@ -497,39 +497,40 @@
       return new THREE.CanvasTexture(c);
     })();
 
-    function cloud(count, radius, size, color, opacity) {
+    // A viewport-filling field of particles spread uniformly in a wide, flat
+    // box — NOT a sphere. A sphere leaves uneven left/right margins that read
+    // as "empty on one side" depending on window aspect; a box that always
+    // overfills the frustum is even across the whole width at any aspect.
+    // HALF_W is generous so ultrawide displays still fill to both edges.
+    var HALF_W = 9, HALF_H = 6;
+    function field(count, depthNear, depthFar, size, color, opacity) {
       var pos = new Float32Array(count * 3);
       for (var i = 0; i < count; i++) {
-        // fibonacci sphere with slight radial jitter
-        var y = 1 - (i / (count - 1)) * 2;
-        var r = Math.sqrt(1 - y * y);
-        var theta = i * 2.399963;
-        var jitter = radius * (0.92 + Math.random() * 0.16);
-        pos[i * 3] = Math.cos(theta) * r * jitter;
-        pos[i * 3 + 1] = y * jitter;
-        pos[i * 3 + 2] = Math.sin(theta) * r * jitter;
+        pos[i * 3] = (Math.random() * 2 - 1) * HALF_W;
+        pos[i * 3 + 1] = (Math.random() * 2 - 1) * HALF_H;
+        pos[i * 3 + 2] = depthNear + Math.random() * (depthFar - depthNear);
       }
       var geo = new THREE.BufferGeometry();
       geo.setAttribute("position", new THREE.BufferAttribute(pos, 3));
       var mat = new THREE.PointsMaterial({
-        color: color, size: size * 2.2, transparent: true, opacity: opacity,
+        color: color, size: size, transparent: true, opacity: opacity,
         map: dotTex, alphaTest: 0.01,
         blending: THREE.AdditiveBlending, depthWrite: false, sizeAttenuation: true,
       });
       return new THREE.Points(geo, mat);
     }
 
-    var outer = cloud(1600, 2.6, 0.022, 0x6b7bff, 0.55);
-    var inner = cloud(900, 1.7, 0.018, 0xa45cf0, 0.45);
+    // Two depth layers give parallax without any lopsided silhouette.
+    var far = field(1400, -6, -3, 0.05, 0x6b7bff, 0.5);
+    var near = field(900, -2, 1, 0.07, 0xa45cf0, 0.55);
     var group = new THREE.Group();
-    group.add(outer); group.add(inner);
-    group.position.y = 1.1;           // sit behind the hero headline
+    group.add(far); group.add(near);
     scene.add(group);
 
     var mx = 0, my = 0, tx = 0, ty = 0;
     window.addEventListener("pointermove", function (e) {
-      tx = (e.clientX / window.innerWidth - 0.5) * 0.35;
-      ty = (e.clientY / window.innerHeight - 0.5) * 0.2;
+      tx = (e.clientX / window.innerWidth - 0.5) * 0.6;
+      ty = (e.clientY / window.innerHeight - 0.5) * 0.4;
     }, { passive: true });
 
     function resize() {
@@ -546,13 +547,17 @@
       requestAnimationFrame(animate);
       var t = clock.getElapsedTime();
       mx += (tx - mx) * 0.04; my += (ty - my) * 0.04;
-      group.rotation.y = t * 0.05 + mx;
-      group.rotation.x = Math.sin(t * 0.11) * 0.06 + my;
-      inner.rotation.y = -t * 0.09;
-      // fade the sphere out as you scroll past the hero
+      // Gentle drift + mouse parallax as translation (never a spin, so the
+      // field stays evenly distributed across the frame at all times).
+      // Near layer moves more than far → depth.
+      far.position.x = Math.sin(t * 0.04) * 0.3 + mx * 0.4;
+      far.position.y = Math.cos(t * 0.05) * 0.2 + my * 0.4;
+      near.position.x = Math.sin(t * 0.06 + 1) * 0.5 + mx;
+      near.position.y = Math.cos(t * 0.05 + 1) * 0.3 + my;
+      // fade out as you scroll past the hero
       var fade = Math.max(0, 1 - window.scrollY / 900);
-      outer.material.opacity = 0.55 * fade;
-      inner.material.opacity = 0.45 * fade;
+      far.material.opacity = 0.5 * fade;
+      near.material.opacity = 0.55 * fade;
       renderer.render(scene, camera);
     })();
   } catch (e) { /* decorative only — page works without it */ }
