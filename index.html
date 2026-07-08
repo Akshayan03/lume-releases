@@ -3,152 +3,560 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Lume — a calm assistant that sees your screen</title>
-<meta name="description" content="Lume is a tiny floating assistant for your Mac. One click and Claude sees your screen, tells you what's blocking you, and can even do the task for you.">
+<title>Lume — your screen, understood</title>
+<meta name="description" content="Lume is a tiny floating assistant for your Mac. One keystroke and Claude sees your screen, tells you what's blocking you — or just does the task for you.">
 <link rel="icon" type="image/png" href="icon.png">
 <style>
   :root {
-    --bg: #0b0b12;
-    --panel: #14141f;
-    --panel-2: #191927;
-    --text: #ececf4;
-    --muted: #9a9ab0;
-    --brand-1: #5c6bfa;
-    --brand-2: #9e59eb;
-    --line: rgba(255,255,255,.08);
+    --bg: #06060c;
+    --text: #eef0ff;
+    --muted: #8f93ad;
+    --faint: #5b5e75;
+    --b1: #6b7bff;
+    --b2: #a45cf0;
+    --line: rgba(160,170,255,.10);
+    --glass: rgba(150,160,255,.045);
+    --mono: ui-monospace, "SF Mono", "JetBrains Mono", Menlo, monospace;
   }
-  * { margin: 0; padding: 0; box-sizing: border-box; }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  html { scroll-behavior:smooth; }
   body {
-    background: var(--bg);
-    color: var(--text);
-    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", sans-serif;
-    line-height: 1.6;
-    -webkit-font-smoothing: antialiased;
+    background: var(--bg); color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", sans-serif;
+    line-height:1.6; -webkit-font-smoothing:antialiased; overflow-x:hidden;
   }
-  .wrap { max-width: 760px; margin: 0 auto; padding: 0 24px; }
+  ::selection { background: rgba(107,123,255,.35); }
 
-  header { padding: 88px 0 56px; text-align: center; position: relative; overflow: hidden; }
-  .halo {
-    position: absolute; inset: -40% -20% auto; height: 480px;
-    background: radial-gradient(ellipse at center, rgba(92,107,250,.22), transparent 65%);
-    pointer-events: none;
+  /* ---------- three.js backdrop ---------- */
+  #bg3d { position:fixed; inset:0; z-index:0; pointer-events:none; }
+  .vignette {
+    position:fixed; inset:0; z-index:1; pointer-events:none;
+    background:
+      radial-gradient(ellipse 90% 55% at 50% 0%, rgba(107,123,255,.10), transparent 60%),
+      linear-gradient(180deg, transparent 0%, transparent 55%, var(--bg) 96%);
   }
-  .app-icon { width: 128px; height: 128px; margin-bottom: 20px; }
-  h1 { font-size: 44px; font-weight: 700; letter-spacing: -0.02em; }
-  .tagline { font-size: 19px; color: var(--muted); margin: 10px auto 32px; max-width: 34em; }
-  .tagline b { color: var(--text); font-weight: 600; }
+  .grid-lines {
+    position:fixed; inset:0; z-index:0; pointer-events:none; opacity:.5;
+    background-image:
+      linear-gradient(rgba(140,150,255,.033) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(140,150,255,.033) 1px, transparent 1px);
+    background-size: 56px 56px;
+    mask-image: radial-gradient(ellipse 80% 60% at 50% 10%, black, transparent 75%);
+    -webkit-mask-image: radial-gradient(ellipse 80% 60% at 50% 10%, black, transparent 75%);
+  }
 
+  .wrap { max-width: 1020px; margin:0 auto; padding:0 28px; position:relative; z-index:2; }
+
+  /* ---------- nav ---------- */
+  nav {
+    position:sticky; top:0; z-index:50;
+    backdrop-filter: blur(18px); -webkit-backdrop-filter: blur(18px);
+    background: rgba(6,6,12,.55); border-bottom:1px solid var(--line);
+  }
+  .nav-inner { display:flex; align-items:center; justify-content:space-between; padding:14px 0; }
+  .logo { display:flex; align-items:center; gap:10px; font-weight:650; font-size:16px; letter-spacing:-.01em; text-decoration:none; color:var(--text); }
+  .logo img { width:26px; height:26px; }
+  .nav-cta {
+    font-size:13px; font-weight:600; color:#fff; text-decoration:none;
+    padding:8px 18px; border-radius:10px;
+    background: linear-gradient(135deg, var(--b1), var(--b2));
+    box-shadow: 0 4px 18px rgba(107,123,255,.30);
+    transition: transform .15s ease;
+  }
+  .nav-cta:hover { transform: translateY(-1px); }
+
+  /* ---------- hero ---------- */
+  header { padding: 92px 0 30px; text-align:center; position:relative; }
+  .kicker {
+    font-family: var(--mono); font-size:12px; letter-spacing:.22em; color:var(--b1);
+    text-transform: uppercase; display:inline-flex; align-items:center; gap:10px;
+    padding:7px 16px; border:1px solid rgba(107,123,255,.28); border-radius:99px;
+    background: rgba(107,123,255,.07); margin-bottom:28px;
+  }
+  .kicker .dot { width:6px; height:6px; border-radius:50%; background:var(--b1); box-shadow:0 0 8px var(--b1); animation: blink 2.2s ease-in-out infinite; }
+  @keyframes blink { 0%,100%{opacity:1} 50%{opacity:.25} }
+  h1 {
+    font-size: clamp(42px, 7vw, 74px); font-weight:700; letter-spacing:-.03em; line-height:1.05;
+  }
+  h1 .grad {
+    background: linear-gradient(100deg, #cdd3ff 0%, var(--b1) 45%, var(--b2) 100%);
+    -webkit-background-clip:text; background-clip:text; color:transparent;
+  }
+  .tagline { font-size: clamp(16px, 2.2vw, 19px); color:var(--muted); margin: 22px auto 34px; max-width: 36em; }
+  .tagline b { color: var(--text); font-weight:600; }
+  .cta-row { display:flex; gap:14px; justify-content:center; align-items:center; flex-wrap:wrap; }
   .dl-btn {
-    display: inline-block;
-    background: linear-gradient(135deg, var(--brand-1), var(--brand-2));
-    color: #fff; text-decoration: none;
-    font-size: 17px; font-weight: 600;
-    padding: 14px 34px; border-radius: 14px;
-    box-shadow: 0 8px 28px rgba(92,107,250,.35);
+    display:inline-flex; align-items:center; gap:10px;
+    background: linear-gradient(135deg, var(--b1), var(--b2));
+    color:#fff; text-decoration:none; font-size:16px; font-weight:600;
+    padding:15px 32px; border-radius:14px;
+    box-shadow: 0 10px 36px rgba(107,123,255,.38), inset 0 1px 0 rgba(255,255,255,.22);
     transition: transform .15s ease, box-shadow .15s ease;
   }
-  .dl-btn:hover { transform: translateY(-1px); box-shadow: 0 10px 34px rgba(92,107,250,.45); }
-  .dl-meta { margin-top: 12px; font-size: 13px; color: var(--muted); }
+  .dl-btn:hover { transform: translateY(-2px); box-shadow: 0 14px 44px rgba(122,92,240,.5), inset 0 1px 0 rgba(255,255,255,.22); }
+  .dl-btn svg { width:17px; height:17px; }
+  .ghost-btn {
+    color:var(--muted); text-decoration:none; font-size:14px; font-weight:500;
+    padding:14px 22px; border:1px solid var(--line); border-radius:14px;
+    background: var(--glass); transition: color .15s, border-color .15s;
+  }
+  .ghost-btn:hover { color:var(--text); border-color: rgba(160,170,255,.28); }
+  .dl-meta { margin-top:16px; font-family:var(--mono); font-size:11.5px; color:var(--faint); letter-spacing:.08em; }
 
-  section { padding: 36px 0; border-top: 1px solid var(--line); }
-  h2 { font-size: 22px; font-weight: 650; margin-bottom: 16px; letter-spacing: -0.01em; }
+  /* ---------- demo mock ---------- */
+  .demo-holder { padding: 52px 0 10px; perspective: 1400px; }
+  .demo {
+    position:relative; border-radius:18px; overflow:hidden;
+    border:1px solid rgba(160,170,255,.16);
+    background: linear-gradient(180deg, #0d0d17, #0a0a13);
+    box-shadow: 0 40px 120px rgba(0,0,0,.55), 0 0 90px rgba(107,123,255,.10);
+    transform: rotateX(4deg); transform-origin: 50% 0%;
+  }
+  .demo-bar { display:flex; align-items:center; gap:8px; padding:12px 16px; border-bottom:1px solid var(--line); background:rgba(255,255,255,.02); }
+  .tl { width:11px; height:11px; border-radius:50%; opacity:.9; }
+  .url {
+    margin-left:12px; flex:1; max-width:340px; text-align:center;
+    font-family:var(--mono); font-size:11px; color:var(--faint);
+    background:rgba(255,255,255,.04); border-radius:7px; padding:4px 12px;
+  }
+  .demo-body { position:relative; height:430px; padding:26px 30px; }
+  .sk { background:rgba(255,255,255,.05); border-radius:8px; }
+  .err {
+    display:flex; gap:10px; align-items:flex-start;
+    background:rgba(255,84,94,.08); border:1px solid rgba(255,84,94,.28); border-radius:10px;
+    padding:12px 14px; margin-top:18px; max-width:520px;
+    font-family:var(--mono); font-size:12px; color:#ff9a9f; line-height:1.5;
+  }
+  .fixbtn {
+    display:inline-block; margin-top:18px; position:relative;
+    font-size:13px; font-weight:600; color:#dfe3ff;
+    background:rgba(120,130,255,.14); border:1px solid rgba(120,130,255,.35);
+    padding:9px 20px; border-radius:9px;
+  }
+  .ring {
+    position:absolute; inset:-7px; border-radius:13px;
+    border:2.5px solid var(--b1); pointer-events:none;
+    animation: ringpulse 1.6s ease-in-out infinite;
+  }
+  @keyframes ringpulse {
+    0%,100% { box-shadow: 0 0 6px rgba(107,123,255,.5); opacity:.85; transform:scale(1); }
+    50% { box-shadow: 0 0 26px rgba(107,123,255,.9); opacity:1; transform:scale(1.025); }
+  }
+  .ring-tip {
+    position:absolute; top:calc(100% + 13px); left:0; white-space:nowrap;
+    background:rgba(8,8,16,.92); border:1px solid var(--line);
+    font-size:11.5px; color:#c9cdf2; padding:6px 12px; border-radius:8px;
+    font-family: var(--mono);
+  }
 
-  .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; }
+  /* chat panel inside demo */
+  .panel {
+    position:absolute; right:26px; top:24px; width:300px;
+    border-radius:16px; overflow:hidden;
+    background: rgba(16,16,26,.90);
+    backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+    border:1px solid rgba(160,170,255,.18);
+    box-shadow: 0 24px 70px rgba(0,0,0,.6);
+    font-size:12.5px;
+  }
+  .panel-head { display:flex; align-items:center; gap:7px; padding:11px 14px; border-bottom:1px solid var(--line); font-weight:600; font-size:12.5px; }
+  .panel-head .spark { color:var(--b1); }
+  .panel-head .x { margin-left:auto; color:var(--faint); }
+  .panel-body { padding:14px; min-height:150px; }
+  .bubble {
+    background:rgba(255,255,255,.055); border-radius:11px; padding:10px 12px;
+    color:#d9dcf5; line-height:1.55; min-height:64px;
+  }
+  .caret { display:inline-block; width:7px; height:13px; background:var(--b1); vertical-align:-2px; margin-left:2px; animation: blink 1s steps(1) infinite; }
+  .chips { display:flex; flex-wrap:wrap; gap:6px; margin-top:11px; opacity:0; transition:opacity .5s ease; }
+  .chips.show { opacity:1; }
+  .chip {
+    font-size:10.5px; font-weight:600; color:#aeb6ff;
+    border:1px solid rgba(120,130,255,.4); background:rgba(120,130,255,.10);
+    padding:4px 11px; border-radius:99px;
+  }
+  .panel-foot { padding:10px 14px 12px; border-top:1px solid var(--line); }
+  .fake-input { display:flex; align-items:center; justify-content:space-between; background:rgba(255,255,255,.05); border-radius:9px; padding:7px 11px; color:var(--faint); font-size:11.5px; }
+  .via { text-align:right; font-size:9.5px; color:var(--faint); margin-top:7px; font-family:var(--mono); }
+
+  /* the floating circle */
+  .lume-circle {
+    position:absolute; right:40px; bottom:30px; width:52px; height:52px; border-radius:50%;
+    background: linear-gradient(135deg, var(--b1), var(--b2));
+    display:flex; align-items:center; justify-content:center;
+    box-shadow: 0 6px 24px rgba(0,0,0,.5), 0 0 30px rgba(122,92,240,.45);
+    font-size:19px; color:#fff;
+  }
+  .lume-circle::before, .lume-circle::after {
+    content:""; position:absolute; inset:0; border-radius:50%;
+    border:2px solid rgba(140,150,255,.55);
+    animation: sonar 2.6s ease-out infinite;
+  }
+  .lume-circle::after { animation-delay: 1.3s; }
+  @keyframes sonar { 0% { transform:scale(1); opacity:.8; } 100% { transform:scale(1.9); opacity:0; } }
+
+  /* ---------- sections ---------- */
+  section { padding: 84px 0 0; }
+  .sec-kicker { font-family:var(--mono); font-size:11px; letter-spacing:.24em; color:var(--b1); text-transform:uppercase; margin-bottom:14px; }
+  h2 { font-size: clamp(26px, 3.6vw, 36px); font-weight:700; letter-spacing:-.02em; margin-bottom:14px; }
+  .sec-sub { color:var(--muted); max-width:42em; margin-bottom:36px; font-size:15.5px; }
+
+  .cards { display:grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap:14px; }
   .card {
-    background: var(--panel); border: 1px solid var(--line);
-    border-radius: 14px; padding: 18px;
+    position:relative; background: var(--glass); border:1px solid var(--line);
+    border-radius:16px; padding:24px 22px; overflow:hidden;
+    transition: transform .2s ease, border-color .2s ease;
   }
-  .card .emoji { font-size: 22px; }
-  .card h3 { font-size: 15px; font-weight: 600; margin: 8px 0 4px; }
-  .card p { font-size: 13.5px; color: var(--muted); }
+  .card:hover { transform: translateY(-3px); border-color: rgba(140,150,255,.30); }
+  .card::before {
+    content:""; position:absolute; top:0; left:0; right:0; height:1px;
+    background: linear-gradient(90deg, transparent, rgba(140,150,255,.5), transparent);
+    opacity:0; transition:opacity .2s;
+  }
+  .card:hover::before { opacity:1; }
+  .card .ico {
+    width:38px; height:38px; border-radius:11px; display:flex; align-items:center; justify-content:center;
+    background: linear-gradient(135deg, rgba(107,123,255,.18), rgba(164,92,240,.18));
+    border:1px solid rgba(140,150,255,.25); font-size:17px; margin-bottom:14px;
+  }
+  .card h3 { font-size:15.5px; font-weight:650; margin-bottom:6px; }
+  .card p { font-size:13.5px; color:var(--muted); }
 
-  .notice {
-    background: var(--panel-2); border: 1px solid var(--line);
-    border-left: 3px solid var(--brand-1);
-    border-radius: 12px; padding: 18px 20px; font-size: 14.5px;
+  /* steps */
+  .steps { display:grid; grid-template-columns:repeat(auto-fit, minmax(240px,1fr)); gap:14px; counter-reset: step; }
+  .step { background:var(--glass); border:1px solid var(--line); border-radius:16px; padding:24px 22px; position:relative; }
+  .step .num { font-family:var(--mono); font-size:11px; color:var(--b1); letter-spacing:.2em; margin-bottom:10px; }
+  .step h3 { font-size:15px; font-weight:650; margin-bottom:6px; }
+  .step p { font-size:13.5px; color:var(--muted); }
+  .step kbd {
+    background:rgba(255,255,255,.09); border:1px solid var(--line); border-bottom-width:2px;
+    border-radius:6px; padding:1px 8px; font-family:var(--mono); font-size:12px; color:var(--text);
   }
-  ol { margin: 12px 0 0 20px; }
-  ol li { margin-bottom: 8px; font-size: 14.5px; }
-  ol li span.path { color: var(--muted); }
-  kbd {
-    background: rgba(255,255,255,.09); border: 1px solid var(--line);
-    border-radius: 5px; padding: 1px 7px;
-    font-family: ui-monospace, "SF Mono", monospace; font-size: 12.5px;
-  }
-  ul.plain { list-style: none; }
-  ul.plain li { font-size: 14.5px; color: var(--muted); margin-bottom: 9px; padding-left: 24px; position: relative; }
-  ul.plain li::before { content: "●"; position: absolute; left: 4px; font-size: 8px; top: 7px; color: var(--brand-1); }
-  ul.plain li b { color: var(--text); font-weight: 600; }
 
-  code {
-    background: rgba(255,255,255,.08); border-radius: 5px; padding: 1px 6px;
-    font-family: ui-monospace, "SF Mono", monospace; font-size: 12.5px;
+  /* terminal */
+  .term {
+    border-radius:14px; overflow:hidden; border:1px solid var(--line);
+    background:#0b0b15; font-family:var(--mono); font-size:13px;
+    box-shadow: 0 24px 60px rgba(0,0,0,.4);
   }
-  a { color: #8f9bff; }
-  footer { padding: 40px 0 56px; border-top: 1px solid var(--line); text-align: center; font-size: 13px; color: var(--muted); }
+  .term-bar { display:flex; align-items:center; gap:8px; padding:11px 15px; background:rgba(255,255,255,.03); border-bottom:1px solid var(--line); }
+  .term-title { margin-left:8px; font-size:11px; color:var(--faint); }
+  .term-body { padding:20px 22px; line-height:2.0; color:#c6cae8; }
+  .term-body .c { color:var(--faint); }
+  .term-body .g { color:#7ee2a8; }
+  .term-body .y { color:#ffd479; }
+  .term-body b { color:#fff; font-weight:600; }
+
+  /* setup cards */
+  .two { display:grid; grid-template-columns:repeat(auto-fit,minmax(300px,1fr)); gap:14px; }
+  .opt { background:var(--glass); border:1px solid var(--line); border-radius:16px; padding:26px 24px; }
+  .opt .tag { display:inline-block; font-family:var(--mono); font-size:10.5px; letter-spacing:.18em; color:var(--b1); border:1px solid rgba(107,123,255,.3); background:rgba(107,123,255,.08); padding:4px 12px; border-radius:99px; margin-bottom:14px; text-transform:uppercase; }
+  .opt h3 { font-size:16.5px; font-weight:650; margin-bottom:8px; }
+  .opt p { font-size:13.5px; color:var(--muted); margin-bottom:10px; }
+  .opt code { background:rgba(255,255,255,.07); border-radius:6px; padding:2px 8px; font-family:var(--mono); font-size:11.5px; color:#c9cdf2; }
+  .opt a { color:#9daaff; }
+
+  /* privacy */
+  .priv { display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:12px; }
+  .pv { display:flex; gap:12px; align-items:flex-start; background:var(--glass); border:1px solid var(--line); border-radius:14px; padding:18px; }
+  .pv .pi { color:var(--b1); font-size:16px; line-height:1.4; }
+  .pv p { font-size:13px; color:var(--muted); }
+  .pv b { color:var(--text); }
+
+  footer { margin-top:90px; padding:36px 0 60px; border-top:1px solid var(--line); text-align:center; font-size:12.5px; color:var(--faint); font-family:var(--mono); }
+  footer a { color:#8f9bff; text-decoration:none; }
+
+  /* reveal on scroll */
+  .rv { opacity:0; transform: translateY(22px); transition: opacity .7s ease, transform .7s ease; }
+  .rv.in { opacity:1; transform:none; }
+
+  @media (max-width: 720px) {
+    .demo { transform:none; }
+    .demo-body { height: 500px; padding:18px; }
+    .panel { right:12px; left:12px; width:auto; top:auto; bottom:86px; }
+    .lume-circle { right:22px; bottom:20px; }
+    .err { font-size:11px; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { animation:none !important; transition:none !important; }
+  }
 </style>
 </head>
 <body>
 
-<header>
-  <div class="halo"></div>
-  <div class="wrap">
-    <img class="app-icon" src="icon.png" alt="Lume icon" width="128" height="128">
-    <h1>Lume</h1>
-    <p class="tagline">A calm little circle that floats above your work. One click and Claude <b>sees your screen</b>, tells you what's blocking you, walks you through the fix — or just <b>does it for you</b>.</p>
-    <a class="dl-btn" href="https://github.com/Akshayan03/lume-releases/releases/latest/download/Lume.dmg">Download Lume for Mac</a>
-    <div class="dl-meta">Free · macOS 14+ · Apple Silicon &amp; Intel · v0.2.1</div>
+<canvas id="bg3d"></canvas>
+<div class="grid-lines"></div>
+<div class="vignette"></div>
+
+<nav>
+  <div class="wrap nav-inner">
+    <a class="logo" href="#"><img src="icon.png" alt=""> Lume</a>
+    <a class="nav-cta" href="https://github.com/Akshayan03/lume-releases/releases/latest/download/Lume.dmg">Download</a>
   </div>
+</nav>
+
+<header class="wrap">
+  <div class="kicker"><span class="dot"></span> press ⌥ space · anywhere on your mac</div>
+  <h1>Your screen,<br><span class="grad">understood.</span></h1>
+  <p class="tagline">Lume is a tiny circle that floats above your work. One keystroke and Claude <b>sees exactly what you see</b> — explains what's blocking you, highlights the button to click, or takes the wheel and <b>does it for you</b>.</p>
+  <div class="cta-row">
+    <a class="dl-btn" href="https://github.com/Akshayan03/lume-releases/releases/latest/download/Lume.dmg">
+      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 3v12m0 0l-4.5-4.5M12 15l4.5-4.5M4 19.5h16" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      Download for Mac
+    </a>
+    <a class="ghost-btn" href="#install">Install guide ↓</a>
+  </div>
+  <div class="dl-meta">FREE · MACOS 14+ · APPLE SILICON &amp; INTEL · V0.2.1 · 1.9 MB</div>
 </header>
 
-<div class="wrap">
+<!-- animated product demo -->
+<div class="wrap demo-holder rv">
+  <div class="demo">
+    <div class="demo-bar">
+      <span class="tl" style="background:#ff5f57"></span>
+      <span class="tl" style="background:#febc2e"></span>
+      <span class="tl" style="background:#28c840"></span>
+      <span class="url">acme-app.vercel.app/deploys</span>
+    </div>
+    <div class="demo-body">
+      <div class="sk" style="width:180px;height:20px"></div>
+      <div class="sk" style="width:320px;height:12px;margin-top:14px"></div>
+      <div class="sk" style="width:280px;height:12px;margin-top:8px"></div>
+      <div class="err">✕&nbsp; <span>Build failed — Environment variable <b style="color:#ffd2d5">DATABASE_URL</b> is not defined.<br><span style="opacity:.6">exit code 1 · 14:32:07</span></span></div>
+      <span class="fixbtn">Environment Settings
+        <span class="ring"></span>
+        <span class="ring-tip">← Lume highlights the fix</span>
+      </span>
 
-<section>
-  <h2>What it does</h2>
+      <!-- Lume chat panel -->
+      <div class="panel">
+        <div class="panel-head"><span class="spark">✦</span> Lume <span class="x">✕</span></div>
+        <div class="panel-body">
+          <div class="bubble"><span id="typed"></span><span class="caret" id="caret"></span></div>
+          <div class="chips" id="chips">
+            <span class="chip">Explain</span>
+            <span class="chip">Walk me through it</span>
+            <span class="chip">Do it for me</span>
+          </div>
+        </div>
+        <div class="panel-foot">
+          <div class="fake-input"><span>Ask Lume…</span><span style="color:var(--b1)">➤</span></div>
+          <div class="via">via Claude subscription</div>
+        </div>
+      </div>
+
+      <!-- floating circle -->
+      <div class="lume-circle">✦</div>
+    </div>
+  </div>
+</div>
+
+<section class="wrap rv">
+  <div class="sec-kicker">// capabilities</div>
+  <h2>An extra pair of eyes.<br>Sometimes an extra pair of hands.</h2>
   <div class="cards">
-    <div class="card"><div class="emoji">👀</div><h3>Sees what you see</h3><p>Press ⌥ Space or click the circle. Lume screenshots your screen once, on demand — never in the background — and opens with Claude already telling you what it sees.</p></div>
-    <div class="card"><div class="emoji">🧭</div><h3>Walks you through it</h3><p>Guided mode highlights the exact button to click, step by step, with a pulsing outline right on your screen.</p></div>
-    <div class="card"><div class="emoji">🪄</div><h3>Autopilot</h3><p>Give it a goal and Lume clicks and types on your behalf — narrating every action, pausing for approval on anything risky, with a Stop button always visible.</p></div>
-    <div class="card"><div class="emoji">🔑</div><h3>Bring your own Claude</h3><p>Use an Anthropic API key, or your Claude Pro/Max subscription via the Claude Code CLI. Your keys stay in your Mac's Keychain.</p></div>
+    <div class="card"><div class="ico">👁</div><h3>Sees on demand</h3><p>One screenshot, only when you summon it. Lume opens already talking — what you're doing, what's broken, how to fix it.</p></div>
+    <div class="card"><div class="ico">◎</div><h3>Guided walkthroughs</h3><p>A pulsing highlight lands on the exact UI element to click, step by step, recapturing your screen between moves.</p></div>
+    <div class="card"><div class="ico">🪄</div><h3>Autopilot</h3><p>Give it a goal. Lume clicks and types toward it, narrating live — risky actions wait for your approval, Stop is always one click away.</p></div>
+    <div class="card"><div class="ico">⌘</div><h3>Native &amp; weightless</h3><p>A 2 MB Swift app. No Electron, no accounts, no telemetry. Floats over full-screen apps and every Space.</p></div>
   </div>
 </section>
 
-<section>
-  <h2>First open — one extra step</h2>
-  <div class="notice">
-    Lume isn't notarized by Apple yet (that's coming), so macOS shows a warning the first time you open it. That's expected — here's the 20-second path:
-    <ol>
-      <li>Open <code>Lume.dmg</code> and drag <b>Lume</b> into <b>Applications</b>.</li>
-      <li>Double-click Lume. macOS says it <i>"cannot verify the app is free of malware"</i> — click <b>Done</b> (not "Move&nbsp;to&nbsp;Trash").</li>
-      <li>Open <span class="path">System Settings → Privacy &amp; Security</span>, scroll down, and click <b>Open Anyway</b> next to Lume, then confirm.</li>
-    </ol>
-    You only do this once. Lume will then ask for <b>Screen Recording</b> permission (so Claude can see your screen when you ask) — grant it, then quit and reopen Lume once, as macOS requires.
+<section class="wrap rv">
+  <div class="sec-kicker">// how it works</div>
+  <h2>Three moves, memorize zero.</h2>
+  <div class="steps">
+    <div class="step"><div class="num">01</div><h3>Summon</h3><p>Press <kbd>⌥ space</kbd> or click the floating circle. Lume grabs one frame of your screen.</p></div>
+    <div class="step"><div class="num">02</div><h3>It speaks first</h3><p>Claude opens the conversation: what it sees, the likely blocker, and an offer to help. Never an empty chat box.</p></div>
+    <div class="step"><div class="num">03</div><h3>Choose your depth</h3><p>Explain it, get the steps, be walked through with highlights — or hand over the mouse with Autopilot.</p></div>
   </div>
 </section>
 
-<section>
-  <h2>Set up in two minutes</h2>
-  <ul class="plain">
-    <li><b>Option A — API key:</b> grab a key at <a href="https://console.anthropic.com">console.anthropic.com</a>, open Lume's menu-bar icon → Settings, and paste it. Pay-per-use on your Anthropic account.</li>
-    <li><b>Option B — Claude subscription:</b> if you have Claude Pro/Max and the <a href="https://docs.claude.com/en/docs/claude-code/overview">Claude Code CLI</a> installed (<code>npm install -g @anthropic-ai/claude-code</code>, then run <code>claude</code> once to log in), Lume can use it automatically — no API billing. Replies are a bit slower in this mode.</li>
-  </ul>
+<section class="wrap rv" id="install">
+  <div class="sec-kicker">// install</div>
+  <h2>First open takes 20 extra seconds.</h2>
+  <p class="sec-sub">Lume isn't notarized by Apple yet (signing certificate on the way), so macOS shows a one-time warning. Entirely expected — here's the path through it:</p>
+  <div class="term">
+    <div class="term-bar">
+      <span class="tl" style="background:#ff5f57"></span>
+      <span class="tl" style="background:#febc2e"></span>
+      <span class="tl" style="background:#28c840"></span>
+      <span class="term-title">lume — install.log</span>
+    </div>
+    <div class="term-body">
+      <span class="c"># 1.</span> open <b>Lume.dmg</b> → drag Lume into <b>Applications</b><br>
+      <span class="c"># 2.</span> double-click Lume → <span class="y">"cannot verify… free of malware"</span> → click <b>Done</b> <span class="c">(not "Move to Trash")</span><br>
+      <span class="c"># 3.</span> System Settings → Privacy &amp; Security → scroll down → <b>Open Anyway</b> → confirm<br>
+      <span class="g">✓</span> lume is live — look for the circle, bottom-right<br>
+      <span class="c"># then: grant <b>Screen Recording</b> when asked and hit "Quit &amp; Reopen Lume" — macOS applies it on relaunch</span>
+    </div>
+  </div>
 </section>
 
-<section>
-  <h2>Privacy, plainly</h2>
-  <ul class="plain">
-    <li>Your screen is captured <b>only when you ask</b> — a click, a hotkey, a message, or between steps of an Autopilot task you started. Never on a timer.</li>
-    <li>Screenshots go to Anthropic's Claude and are <b>discarded after each request</b>. Nothing is stored or sent anywhere else.</li>
-    <li>Your API key lives in the <b>macOS Keychain</b>, not in files.</li>
-    <li>A menu-bar <b>Pause</b> disables all capture instantly.</li>
-  </ul>
+<section class="wrap rv">
+  <div class="sec-kicker">// bring your own claude</div>
+  <h2>Two ways to power it.</h2>
+  <div class="two">
+    <div class="opt">
+      <span class="tag">Option A · API key</span>
+      <h3>Anthropic API</h3>
+      <p>Grab a key at <a href="https://console.anthropic.com">console.anthropic.com</a>, paste it into Lume's Settings (menu bar → Settings). Fastest replies; pay-per-use on your Anthropic account. Stored only in your Keychain.</p>
+    </div>
+    <div class="opt">
+      <span class="tag">Option B · Subscription</span>
+      <h3>Claude Pro / Max</h3>
+      <p>Already pay for Claude? Install the <a href="https://docs.claude.com/en/docs/claude-code/overview">Claude Code CLI</a> and log in once:</p>
+      <p><code>npm i -g @anthropic-ai/claude-code</code> → run <code>claude</code></p>
+      <p>Lume auto-detects it — no API billing, replies a touch slower.</p>
+    </div>
+  </div>
 </section>
 
-<footer class="wrap">
-  Lume v0.2.1 · <a href="https://github.com/Akshayan03/lume-releases/releases">all releases</a><br>
-  Not affiliated with Anthropic. Claude is a trademark of Anthropic, PBC.
+<section class="wrap rv">
+  <div class="sec-kicker">// privacy</div>
+  <h2>Built paranoid, on purpose.</h2>
+  <div class="priv">
+    <div class="pv"><span class="pi">◉</span><p><b>Capture only on ask.</b> A click, a hotkey, a message, or an Autopilot step you initiated. Never on a timer, never in the background.</p></div>
+    <div class="pv"><span class="pi">↯</span><p><b>Nothing stored.</b> Screenshots go to Anthropic's Claude and are discarded after each reply. No disk writes in API mode.</p></div>
+    <div class="pv"><span class="pi">⌗</span><p><b>Keys in Keychain.</b> Your API key never touches a file, a default, or a log.</p></div>
+    <div class="pv"><span class="pi">■</span><p><b>Hard pause.</b> One menu-bar click disables all capture and greys the circle until you say otherwise.</p></div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    lume v0.2.1 · <a href="https://github.com/Akshayan03/lume-releases/releases">all releases</a> · built with claude<br>
+    <span style="opacity:.65">not affiliated with anthropic · claude is a trademark of anthropic, pbc</span>
+  </div>
 </footer>
 
-</div>
+<script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>
+<script>
+(function () {
+  var reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  /* ---- typed demo message ---- */
+  var messages = [
+    "You're on Acme's deploy page and the build just failed — DATABASE_URL isn't set. Add it under Environment Settings and redeploy. Want help?",
+    "I can walk you through it with on-screen highlights, or switch to Autopilot and fix it myself — your call.",
+  ];
+  var typedEl = document.getElementById("typed");
+  var chips = document.getElementById("chips");
+  if (reduced) {
+    typedEl.textContent = messages[0];
+    chips.classList.add("show");
+  } else {
+    var mi = 0, ci = 0;
+    function type() {
+      var msg = messages[mi];
+      if (ci <= msg.length) {
+        typedEl.textContent = msg.slice(0, ci);
+        ci += 1;
+        setTimeout(type, 26);
+      } else {
+        chips.classList.add("show");
+        setTimeout(function () {
+          chips.classList.remove("show");
+          ci = 0; mi = (mi + 1) % messages.length;
+          setTimeout(type, 500);
+        }, 4200);
+      }
+    }
+    setTimeout(type, 900);
+  }
+
+  /* ---- reveal on scroll ---- */
+  var io = new IntersectionObserver(function (entries) {
+    entries.forEach(function (e) {
+      if (e.isIntersecting) { e.target.classList.add("in"); io.unobserve(e.target); }
+    });
+  }, { threshold: 0.12 });
+  document.querySelectorAll(".rv").forEach(function (el) { io.observe(el); });
+
+  /* ---- three.js particle sphere backdrop ---- */
+  if (reduced || typeof THREE === "undefined") return;
+  try {
+    var canvas = document.getElementById("bg3d");
+    var renderer = new THREE.WebGLRenderer({ canvas: canvas, alpha: true, antialias: true });
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    var scene = new THREE.Scene();
+    var camera = new THREE.PerspectiveCamera(55, 1, 0.1, 100);
+    camera.position.z = 5;
+
+    // soft round sprite so points glow instead of rendering as squares
+    var dotTex = (function () {
+      var c = document.createElement("canvas");
+      c.width = c.height = 64;
+      var g = c.getContext("2d");
+      var grad = g.createRadialGradient(32, 32, 0, 32, 32, 32);
+      grad.addColorStop(0, "rgba(255,255,255,1)");
+      grad.addColorStop(0.4, "rgba(255,255,255,.55)");
+      grad.addColorStop(1, "rgba(255,255,255,0)");
+      g.fillStyle = grad;
+      g.fillRect(0, 0, 64, 64);
+      return new THREE.CanvasTexture(c);
+    })();
+
+    function cloud(count, radius, size, color, opacity) {
+      var pos = new Float32Array(count * 3);
+      for (var i = 0; i < count; i++) {
+        // fibonacci sphere with slight radial jitter
+        var y = 1 - (i / (count - 1)) * 2;
+        var r = Math.sqrt(1 - y * y);
+        var theta = i * 2.399963;
+        var jitter = radius * (0.92 + Math.random() * 0.16);
+        pos[i * 3] = Math.cos(theta) * r * jitter;
+        pos[i * 3 + 1] = y * jitter;
+        pos[i * 3 + 2] = Math.sin(theta) * r * jitter;
+      }
+      var geo = new THREE.BufferGeometry();
+      geo.setAttribute("position", new THREE.BufferAttribute(pos, 3));
+      var mat = new THREE.PointsMaterial({
+        color: color, size: size * 2.2, transparent: true, opacity: opacity,
+        map: dotTex, alphaTest: 0.01,
+        blending: THREE.AdditiveBlending, depthWrite: false, sizeAttenuation: true,
+      });
+      return new THREE.Points(geo, mat);
+    }
+
+    var outer = cloud(1600, 2.6, 0.022, 0x6b7bff, 0.55);
+    var inner = cloud(900, 1.7, 0.018, 0xa45cf0, 0.45);
+    var group = new THREE.Group();
+    group.add(outer); group.add(inner);
+    group.position.y = 1.1;           // sit behind the hero headline
+    scene.add(group);
+
+    var mx = 0, my = 0, tx = 0, ty = 0;
+    window.addEventListener("pointermove", function (e) {
+      tx = (e.clientX / window.innerWidth - 0.5) * 0.35;
+      ty = (e.clientY / window.innerHeight - 0.5) * 0.2;
+    }, { passive: true });
+
+    function resize() {
+      var w = window.innerWidth, h = window.innerHeight;
+      renderer.setSize(w, h, false);
+      camera.aspect = w / h;
+      camera.updateProjectionMatrix();
+    }
+    window.addEventListener("resize", resize, { passive: true });
+    resize();
+
+    var clock = new THREE.Clock();
+    (function animate() {
+      requestAnimationFrame(animate);
+      var t = clock.getElapsedTime();
+      mx += (tx - mx) * 0.04; my += (ty - my) * 0.04;
+      group.rotation.y = t * 0.05 + mx;
+      group.rotation.x = Math.sin(t * 0.11) * 0.06 + my;
+      inner.rotation.y = -t * 0.09;
+      // fade the sphere out as you scroll past the hero
+      var fade = Math.max(0, 1 - window.scrollY / 900);
+      outer.material.opacity = 0.55 * fade;
+      inner.material.opacity = 0.45 * fade;
+      renderer.render(scene, camera);
+    })();
+  } catch (e) { /* decorative only — page works without it */ }
+})();
+</script>
 </body>
 </html>
