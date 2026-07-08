@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Lume — a calm assistant that sees your screen</title>
+<meta name="description" content="Lume is a tiny floating assistant for your Mac. One click and Claude sees your screen, tells you what's blocking you, and can even do the task for you.">
+<link rel="icon" type="image/png" href="icon.png">
+<style>
+  :root {
+    --bg: #0b0b12;
+    --panel: #14141f;
+    --panel-2: #191927;
+    --text: #ececf4;
+    --muted: #9a9ab0;
+    --brand-1: #5c6bfa;
+    --brand-2: #9e59eb;
+    --line: rgba(255,255,255,.08);
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", sans-serif;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
+  .wrap { max-width: 760px; margin: 0 auto; padding: 0 24px; }
+
+  header { padding: 88px 0 56px; text-align: center; position: relative; overflow: hidden; }
+  .halo {
+    position: absolute; inset: -40% -20% auto; height: 480px;
+    background: radial-gradient(ellipse at center, rgba(92,107,250,.22), transparent 65%);
+    pointer-events: none;
+  }
+  .app-icon { width: 128px; height: 128px; margin-bottom: 20px; }
+  h1 { font-size: 44px; font-weight: 700; letter-spacing: -0.02em; }
+  .tagline { font-size: 19px; color: var(--muted); margin: 10px auto 32px; max-width: 34em; }
+  .tagline b { color: var(--text); font-weight: 600; }
+
+  .dl-btn {
+    display: inline-block;
+    background: linear-gradient(135deg, var(--brand-1), var(--brand-2));
+    color: #fff; text-decoration: none;
+    font-size: 17px; font-weight: 600;
+    padding: 14px 34px; border-radius: 14px;
+    box-shadow: 0 8px 28px rgba(92,107,250,.35);
+    transition: transform .15s ease, box-shadow .15s ease;
+  }
+  .dl-btn:hover { transform: translateY(-1px); box-shadow: 0 10px 34px rgba(92,107,250,.45); }
+  .dl-meta { margin-top: 12px; font-size: 13px; color: var(--muted); }
+
+  section { padding: 36px 0; border-top: 1px solid var(--line); }
+  h2 { font-size: 22px; font-weight: 650; margin-bottom: 16px; letter-spacing: -0.01em; }
+
+  .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; }
+  .card {
+    background: var(--panel); border: 1px solid var(--line);
+    border-radius: 14px; padding: 18px;
+  }
+  .card .emoji { font-size: 22px; }
+  .card h3 { font-size: 15px; font-weight: 600; margin: 8px 0 4px; }
+  .card p { font-size: 13.5px; color: var(--muted); }
+
+  .notice {
+    background: var(--panel-2); border: 1px solid var(--line);
+    border-left: 3px solid var(--brand-1);
+    border-radius: 12px; padding: 18px 20px; font-size: 14.5px;
+  }
+  ol { margin: 12px 0 0 20px; }
+  ol li { margin-bottom: 8px; font-size: 14.5px; }
+  ol li span.path { color: var(--muted); }
+  kbd {
+    background: rgba(255,255,255,.09); border: 1px solid var(--line);
+    border-radius: 5px; padding: 1px 7px;
+    font-family: ui-monospace, "SF Mono", monospace; font-size: 12.5px;
+  }
+  ul.plain { list-style: none; }
+  ul.plain li { font-size: 14.5px; color: var(--muted); margin-bottom: 9px; padding-left: 24px; position: relative; }
+  ul.plain li::before { content: "●"; position: absolute; left: 4px; font-size: 8px; top: 7px; color: var(--brand-1); }
+  ul.plain li b { color: var(--text); font-weight: 600; }
+
+  code {
+    background: rgba(255,255,255,.08); border-radius: 5px; padding: 1px 6px;
+    font-family: ui-monospace, "SF Mono", monospace; font-size: 12.5px;
+  }
+  a { color: #8f9bff; }
+  footer { padding: 40px 0 56px; border-top: 1px solid var(--line); text-align: center; font-size: 13px; color: var(--muted); }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="halo"></div>
+  <div class="wrap">
+    <img class="app-icon" src="icon.png" alt="Lume icon" width="128" height="128">
+    <h1>Lume</h1>
+    <p class="tagline">A calm little circle that floats above your work. One click and Claude <b>sees your screen</b>, tells you what's blocking you, walks you through the fix — or just <b>does it for you</b>.</p>
+    <a class="dl-btn" href="https://github.com/Akshayan03/lume-releases/releases/latest/download/Lume.dmg">Download Lume for Mac</a>
+    <div class="dl-meta">Free · macOS 14+ · Apple Silicon &amp; Intel · v0.2.0</div>
+  </div>
+</header>
+
+<div class="wrap">
+
+<section>
+  <h2>What it does</h2>
+  <div class="cards">
+    <div class="card"><div class="emoji">👀</div><h3>Sees what you see</h3><p>Press ⌥ Space or click the circle. Lume screenshots your screen once, on demand — never in the background — and opens with Claude already telling you what it sees.</p></div>
+    <div class="card"><div class="emoji">🧭</div><h3>Walks you through it</h3><p>Guided mode highlights the exact button to click, step by step, with a pulsing outline right on your screen.</p></div>
+    <div class="card"><div class="emoji">🪄</div><h3>Autopilot</h3><p>Give it a goal and Lume clicks and types on your behalf — narrating every action, pausing for approval on anything risky, with a Stop button always visible.</p></div>
+    <div class="card"><div class="emoji">🔑</div><h3>Bring your own Claude</h3><p>Use an Anthropic API key, or your Claude Pro/Max subscription via the Claude Code CLI. Your keys stay in your Mac's Keychain.</p></div>
+  </div>
+</section>
+
+<section>
+  <h2>First open — one extra step</h2>
+  <div class="notice">
+    Lume isn't notarized by Apple yet (that's coming), so macOS shows a warning the first time you open it. That's expected — here's the 20-second path:
+    <ol>
+      <li>Open <code>Lume.dmg</code> and drag <b>Lume</b> into <b>Applications</b>.</li>
+      <li>Double-click Lume. macOS says it <i>"cannot verify the app is free of malware"</i> — click <b>Done</b> (not "Move&nbsp;to&nbsp;Trash").</li>
+      <li>Open <span class="path">System Settings → Privacy &amp; Security</span>, scroll down, and click <b>Open Anyway</b> next to Lume, then confirm.</li>
+    </ol>
+    You only do this once. Lume will then ask for <b>Screen Recording</b> permission (so Claude can see your screen when you ask) — grant it, then quit and reopen Lume once, as macOS requires.
+  </div>
+</section>
+
+<section>
+  <h2>Set up in two minutes</h2>
+  <ul class="plain">
+    <li><b>Option A — API key:</b> grab a key at <a href="https://console.anthropic.com">console.anthropic.com</a>, open Lume's menu-bar icon → Settings, and paste it. Pay-per-use on your Anthropic account.</li>
+    <li><b>Option B — Claude subscription:</b> if you have Claude Pro/Max and the <a href="https://docs.claude.com/en/docs/claude-code/overview">Claude Code CLI</a> installed (<code>npm install -g @anthropic-ai/claude-code</code>, then run <code>claude</code> once to log in), Lume can use it automatically — no API billing. Replies are a bit slower in this mode.</li>
+  </ul>
+</section>
+
+<section>
+  <h2>Privacy, plainly</h2>
+  <ul class="plain">
+    <li>Your screen is captured <b>only when you ask</b> — a click, a hotkey, a message, or between steps of an Autopilot task you started. Never on a timer.</li>
+    <li>Screenshots go to Anthropic's Claude and are <b>discarded after each request</b>. Nothing is stored or sent anywhere else.</li>
+    <li>Your API key lives in the <b>macOS Keychain</b>, not in files.</li>
+    <li>A menu-bar <b>Pause</b> disables all capture instantly.</li>
+  </ul>
+</section>
+
+<footer class="wrap">
+  Lume v0.2.0 · <a href="https://github.com/Akshayan03/lume-releases/releases">all releases</a><br>
+  Not affiliated with Anthropic. Claude is a trademark of Anthropic, PBC.
+</footer>
+
+</div>
+</body>
+</html>
